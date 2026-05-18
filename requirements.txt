@@ -1,0 +1,6 @@
+sounddevice
+scipy
+keyboard
+rapidfuzz
+pyautogui
+faster-whisper
