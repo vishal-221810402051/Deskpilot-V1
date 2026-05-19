@@ -6,6 +6,7 @@ from core.listener import record_audio
 from core.transcriber import SpeechTranscriber
 from core.parser import CommandParser
 from core.executor import SafeExecutor
+from core.logger import CommandLogger
 
 
 HOTKEY = "ctrl+space"
@@ -16,6 +17,8 @@ class DeskPilotApp:
         self.transcriber = SpeechTranscriber(model_size="base")
         self.parser = CommandParser()
         self.executor = SafeExecutor()
+        self.logger = CommandLogger()
+
         self.command_count = 0
         self.is_processing = False
 
@@ -27,6 +30,10 @@ class DeskPilotApp:
         self.is_processing = True
         self.command_count += 1
 
+        raw_text = ""
+        intent = {}
+        result = {}
+
         try:
             print("\n" + "=" * 70)
             print(f"Command #{self.command_count}")
@@ -35,24 +42,45 @@ class DeskPilotApp:
             audio_path = record_audio()
 
             print("Transcribing...")
-            text = self.transcriber.transcribe_audio(audio_path)
+            raw_text = self.transcriber.transcribe_audio(audio_path)
 
             print("Parsing command...")
-            intent = self.parser.parse(text)
+            intent = self.parser.parse(raw_text)
 
             print("Executing...")
             result = self.executor.execute(intent)
 
+            self.logger.log_command(
+                command_number=self.command_count,
+                raw_text=raw_text,
+                intent=intent,
+                result=result,
+            )
+
             print("-" * 70)
-            print(f"Voice text : {text}")
+            print(f"Voice text : {raw_text}")
             print(f"Intent     : {intent}")
             print(f"Result     : {result}")
+            print("Log        : saved")
             print("-" * 70)
             print("Ready for next command.")
 
         except Exception as error:
+            result = {
+                "status": "error",
+                "message": str(error),
+            }
+
+            self.logger.log_command(
+                command_number=self.command_count,
+                raw_text=raw_text,
+                intent=intent,
+                result=result,
+            )
+
             print("-" * 70)
             print(f"DeskPilot error: {error}")
+            print("Log        : saved")
             print("-" * 70)
 
         finally:
@@ -60,7 +88,7 @@ class DeskPilotApp:
 
 
 def main():
-    print("DeskPilot V1 - Phase 6 Full Command Loop")
+    print("DeskPilot V1 - Phase 7 Command Logging")
     print("Loading assistant...")
 
     app = DeskPilotApp()
