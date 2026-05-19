@@ -1,6 +1,11 @@
+import os
 import threading
+import time
+from datetime import datetime
 
 import keyboard
+
+import config
 
 from core.listener import record_audio
 from core.transcriber import SpeechTranscriber
@@ -9,12 +14,12 @@ from core.executor import SafeExecutor
 from core.logger import CommandLogger
 
 
-HOTKEY = "ctrl+space"
-
-
 class DeskPilotApp:
     def __init__(self):
-        self.transcriber = SpeechTranscriber(model_size="base")
+        self.transcriber = SpeechTranscriber(
+            model_size=config.WHISPER_MODEL_SIZE
+        )
+
         self.parser = CommandParser()
         self.executor = SafeExecutor()
         self.logger = CommandLogger()
@@ -22,9 +27,15 @@ class DeskPilotApp:
         self.command_count = 0
         self.is_processing = False
 
+    def _timestamp(self) -> str:
+        if not config.ENABLE_TIMESTAMPS:
+            return ""
+
+        return datetime.now().strftime("[%H:%M:%S] ")
+
     def handle_command(self):
         if self.is_processing:
-            print("DeskPilot is already processing a command. Please wait.")
+            print(f"{self._timestamp()}DeskPilot is busy.")
             return
 
         self.is_processing = True
@@ -34,21 +45,34 @@ class DeskPilotApp:
         intent = {}
         result = {}
 
+        start_time = time.time()
+
         try:
-            print("\n" + "=" * 70)
-            print(f"Command #{self.command_count}")
-            print("Listening...")
+            print("\n" + "=" * 72)
 
-            audio_path = record_audio()
+            print(
+                f"{self._timestamp()}DeskPilot Command #{self.command_count}"
+            )
 
-            print("Transcribing...")
+            print(f"{self._timestamp()}Listening...")
+
+            audio_path = record_audio(
+                duration=config.RECORD_DURATION
+            )
+
+            print(f"{self._timestamp()}Transcribing...")
+
             raw_text = self.transcriber.transcribe_audio(audio_path)
 
-            print("Parsing command...")
+            print(f"{self._timestamp()}Parsing command...")
+
             intent = self.parser.parse(raw_text)
 
-            print("Executing...")
+            print(f"{self._timestamp()}Executing command...")
+
             result = self.executor.execute(intent)
+
+            elapsed = round(time.time() - start_time, 2)
 
             self.logger.log_command(
                 command_number=self.command_count,
@@ -57,15 +81,21 @@ class DeskPilotApp:
                 result=result,
             )
 
-            print("-" * 70)
-            print(f"Voice text : {raw_text}")
+            print("-" * 72)
+
+            print(f"Voice Text : {raw_text}")
             print(f"Intent     : {intent}")
             print(f"Result     : {result}")
+            print(f"Duration   : {elapsed}s")
             print("Log        : saved")
-            print("-" * 70)
-            print("Ready for next command.")
+
+            print("-" * 72)
+
+            print(f"{self._timestamp()}Ready for next command.")
 
         except Exception as error:
+            elapsed = round(time.time() - start_time, 2)
+
             result = {
                 "status": "error",
                 "message": str(error),
@@ -78,27 +108,41 @@ class DeskPilotApp:
                 result=result,
             )
 
-            print("-" * 70)
+            print("-" * 72)
+
             print(f"DeskPilot error: {error}")
-            print("Log        : saved")
-            print("-" * 70)
+            print(f"Duration       : {elapsed}s")
+            print("Log            : saved")
+
+            print("-" * 72)
 
         finally:
             self.is_processing = False
 
 
+def print_banner():
+    print("=" * 72)
+    print("DeskPilot V1 — Intelligent Hands-Free Desktop Assistant")
+    print("=" * 72)
+
+
 def main():
-    print("DeskPilot V1 - Phase 8 Confirmation Layer")
-    print("Loading assistant...")
+    if config.ENABLE_TERMINAL_CLEAR:
+        os.system("cls")
+
+    print_banner()
+
+    print("[SYSTEM] Loading assistant components...")
 
     app = DeskPilotApp()
 
-    print(f"Press {HOTKEY.upper()} to give a command.")
-    print("Press ESC to exit.")
-    print("Ready.")
+    print("[SYSTEM] Assistant ready.")
+    print(f"[SYSTEM] Hotkey : {config.HOTKEY.upper()}")
+    print(f"[SYSTEM] Record Duration : {config.RECORD_DURATION}s")
+    print("[SYSTEM] Press ESC to exit.")
 
     keyboard.add_hotkey(
-        HOTKEY,
+        config.HOTKEY,
         lambda: threading.Thread(
             target=app.handle_command,
             daemon=True,
@@ -106,7 +150,8 @@ def main():
     )
 
     keyboard.wait("esc")
-    print("DeskPilot stopped.")
+
+    print("[SYSTEM] DeskPilot stopped.")
 
 
 if __name__ == "__main__":
