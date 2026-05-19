@@ -1,7 +1,8 @@
 import subprocess
 import webbrowser
-from pathlib import Path
 from urllib.parse import quote
+
+from core.file_search import FileSearchEngine
 
 
 class SafeExecutor:
@@ -10,6 +11,8 @@ class SafeExecutor:
     """
 
     def __init__(self):
+        self.file_search = FileSearchEngine()
+
         self.allowed_apps = {
             "chrome": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
             "vscode": r"C:\Users\visha\AppData\Local\Programs\Microsoft VS Code\Code.exe",
@@ -24,6 +27,9 @@ class SafeExecutor:
             if action == "open_folder":
                 return self._open_folder(intent)
 
+            if action == "open_file":
+                return self._open_file(intent)
+
             if action == "open_app":
                 return self._open_app(intent)
 
@@ -32,37 +38,56 @@ class SafeExecutor:
 
             return {
                 "status": "error",
-                "message": f"Unsupported action: {action}"
+                "message": f"Unsupported action: {action}",
             }
 
         except Exception as e:
             return {
                 "status": "error",
-                "message": str(e)
+                "message": str(e),
             }
 
     def _open_folder(self, intent: dict) -> dict:
         target = intent.get("target", "").strip().lower()
         location = intent.get("location")
 
-        if location == "desktop":
-            base_path = Path.home() / "Desktop"
-        else:
-            base_path = Path.home()
+        folder_path = self.file_search.find_folder(target, location)
 
-        folder_path = base_path / target
-
-        if not folder_path.exists():
+        if not folder_path:
             return {
                 "status": "error",
-                "message": f"Folder not found: {folder_path}"
+                "message": f"Folder not found: {target}",
             }
 
         subprocess.Popen(f'explorer "{folder_path}"')
 
         return {
             "status": "success",
-            "message": f"Opened folder: {folder_path}"
+            "message": f"Opened folder: {folder_path}",
+        }
+
+    def _open_file(self, intent: dict) -> dict:
+        target = intent.get("target", "").strip().lower()
+        location = intent.get("location")
+        folder_name = intent.get("folder_name")
+
+        file_path = self.file_search.find_file(
+            file_name=target,
+            folder_name=folder_name,
+            location=location,
+        )
+
+        if not file_path:
+            return {
+                "status": "error",
+                "message": f"File not found: {target}",
+            }
+
+        subprocess.Popen(f'explorer "{file_path}"')
+
+        return {
+            "status": "success",
+            "message": f"Opened file: {file_path}",
         }
 
     def _open_app(self, intent: dict) -> dict:
@@ -73,14 +98,14 @@ class SafeExecutor:
         if not app_path:
             return {
                 "status": "error",
-                "message": f"App not allowed: {target}"
+                "message": f"App not allowed: {target}",
             }
 
         subprocess.Popen(app_path)
 
         return {
             "status": "success",
-            "message": f"Launched app: {target}"
+            "message": f"Launched app: {target}",
         }
 
     def _search_google(self, intent: dict) -> dict:
@@ -89,7 +114,7 @@ class SafeExecutor:
         if not query:
             return {
                 "status": "error",
-                "message": "Empty Google search query"
+                "message": "Empty Google search query",
             }
 
         encoded_query = quote(query)
@@ -99,5 +124,5 @@ class SafeExecutor:
 
         return {
             "status": "success",
-            "message": f"Searched Google for: {query}"
+            "message": f"Searched Google for: {query}",
         }

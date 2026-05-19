@@ -30,7 +30,7 @@ def handle_command(
 
 
 def main():
-    print("DeskPilot V1 - Phase 4 Safe Executor")
+    print("DeskPilot V1 - Phase 5 File & Folder Search Engine")
 
     transcriber = SpeechTranscriber(model_size="base")
     parser = CommandParser()

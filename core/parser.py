@@ -27,11 +27,11 @@ class CommandParser:
                 confidence=0.0
             ))
 
+        if self._is_open_file_command(clean_text):
+            return self._parse_open_file(clean_text, text)
+
         if self._is_open_folder_command(clean_text):
             return asdict(self._parse_open_folder(clean_text, text))
-
-        if self._is_open_file_command(clean_text):
-            return asdict(self._parse_open_file(clean_text, text))
 
         if self._is_open_app_command(clean_text):
             return asdict(self._parse_open_app(clean_text, text))
@@ -99,24 +99,40 @@ class CommandParser:
             confidence=0.85
         )
 
-    def _parse_open_file(self, clean_text: str, raw_text: str) -> CommandIntent:
-        target = clean_text
+    def _parse_open_file(self, clean_text: str, raw_text: str) -> dict:
+        working_text = clean_text
 
-        target = target.replace("open", "")
-        target = target.replace("file", "")
-        target = target.replace("on desktop", "")
-        target = target.replace("inside folder", "in folder")
-        target = target.strip()
+        location = "desktop" if "desktop" in working_text else None
+        folder_name = None
 
-        location = "desktop" if "desktop" in clean_text else None
+        working_text = working_text.replace("open", "")
+        working_text = working_text.replace("file", "")
+        working_text = working_text.replace("on desktop", "")
+        working_text = working_text.strip()
 
-        return CommandIntent(
+        if "inside folder" in working_text:
+            parts = working_text.split("inside folder", 1)
+            target = parts[0].strip()
+            folder_name = parts[1].strip()
+        elif "in folder" in working_text:
+            parts = working_text.split("in folder", 1)
+            target = parts[0].strip()
+            folder_name = parts[1].strip()
+        else:
+            target = working_text
+
+        intent = CommandIntent(
             action="open_file",
             target=target,
             location=location,
             raw_text=raw_text,
             confidence=0.75
         )
+
+        result = asdict(intent)
+        result["folder_name"] = folder_name
+
+        return result
 
     def _parse_open_app(self, clean_text: str, raw_text: str) -> CommandIntent:
         target = clean_text.replace("open", "").strip()

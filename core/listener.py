@@ -5,7 +5,7 @@ from pathlib import Path
 
 def record_audio(
     output_path: str = "data/test_command.wav",
-    duration: int = 5,
+    duration: int = 10,
     sample_rate: int = 16000,
 ) -> Path:
     """
