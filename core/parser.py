@@ -27,14 +27,14 @@ class CommandParser:
                 confidence=0.0
             ))
 
+        if self._is_open_app_command(clean_text):
+            return asdict(self._parse_open_app(clean_text, text))
+
         if self._is_open_file_command(clean_text):
             return self._parse_open_file(clean_text, text)
 
         if self._is_open_folder_command(clean_text):
             return asdict(self._parse_open_folder(clean_text, text))
-
-        if self._is_open_app_command(clean_text):
-            return asdict(self._parse_open_app(clean_text, text))
 
         if self._is_search_google_command(clean_text):
             return asdict(self._parse_search_google(clean_text, text))
@@ -52,6 +52,11 @@ class CommandParser:
             " inside desktop": " on desktop",
             "folder and": "folder on",
             "file and": "file on",
+            "open ballpoint": "open powerpoint",
+            "open power point": "open powerpoint",
+            "open hard look": "open outlook",
+            "open out look": "open outlook",
+            "open world": "open word",
             "the ": "",
         }
 
@@ -73,7 +78,28 @@ class CommandParser:
         return "open" in text and "file" in text
 
     def _is_open_app_command(self, text: str) -> bool:
-        app_words = ["chrome", "vscode", "vs code", "notepad", "calculator"]
+        app_words = [
+            "chrome",
+            "vscode",
+            "vs code",
+            "visual studio code",
+            "notepad",
+            "calculator",
+            "word",
+            "microsoft word",
+            "powerpoint",
+            "power point",
+            "microsoft powerpoint",
+            "excel",
+            "microsoft excel",
+            "outlook",
+            "microsoft outlook",
+            "teams",
+            "microsoft teams",
+            "file explorer",
+            "explorer",
+            "settings",
+        ]
         return text.startswith("open") and any(app in text for app in app_words)
 
     def _is_search_google_command(self, text: str) -> bool:
@@ -141,6 +167,13 @@ class CommandParser:
             "vs code": "vscode",
             "visual studio code": "vscode",
             "google chrome": "chrome",
+            "microsoft word": "word",
+            "microsoft powerpoint": "powerpoint",
+            "power point": "powerpoint",
+            "microsoft excel": "excel",
+            "microsoft outlook": "outlook",
+            "microsoft teams": "teams",
+            "file explorer": "explorer",
         }
 
         target = aliases.get(target, target)

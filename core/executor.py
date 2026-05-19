@@ -14,10 +14,58 @@ class SafeExecutor:
         self.file_search = FileSearchEngine()
 
         self.allowed_apps = {
-            "chrome": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-            "vscode": r"C:\Users\visha\AppData\Local\Programs\Microsoft VS Code\Code.exe",
-            "notepad": "notepad.exe",
-            "calculator": "calc.exe",
+            "chrome": [
+                r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+                r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+            ],
+
+            "vscode": [
+                r"C:\Users\visha\AppData\Local\Programs\Microsoft VS Code\Code.exe",
+            ],
+
+            "word": [
+                r"C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE",
+                r"C:\Program Files (x86)\Microsoft Office\root\Office16\WINWORD.EXE",
+                "start winword",
+            ],
+
+            "powerpoint": [
+                r"C:\Program Files\Microsoft Office\root\Office16\POWERPNT.EXE",
+                r"C:\Program Files (x86)\Microsoft Office\root\Office16\POWERPNT.EXE",
+                "start powerpnt",
+            ],
+
+            "excel": [
+                r"C:\Program Files\Microsoft Office\root\Office16\EXCEL.EXE",
+                r"C:\Program Files (x86)\Microsoft Office\root\Office16\EXCEL.EXE",
+                "start excel",
+            ],
+
+            "outlook": [
+                r"C:\Program Files\Microsoft Office\root\Office16\OUTLOOK.EXE",
+                r"C:\Program Files (x86)\Microsoft Office\root\Office16\OUTLOOK.EXE",
+                "start outlook",
+            ],
+
+            "teams": [
+                "start ms-teams:",
+            ],
+
+            "notepad": [
+                "notepad",
+            ],
+
+            "calculator": [
+                "calc",
+            ],
+
+            "explorer": [
+                "explorer",
+            ],
+
+            "settings": [
+                "start ms-settings:",
+            ],
         }
 
         self.confirmation_required = {
@@ -127,19 +175,30 @@ class SafeExecutor:
     def _open_app(self, intent: dict) -> dict:
         target = intent.get("target", "").strip().lower()
 
-        app_path = self.allowed_apps.get(target)
+        app_commands = self.allowed_apps.get(target)
 
-        if not app_path:
+        if not app_commands:
             return {
                 "status": "error",
                 "message": f"App not allowed: {target}",
             }
 
-        subprocess.Popen(app_path)
+        last_error = None
+
+        for command in app_commands:
+            try:
+                subprocess.Popen(command, shell=True)
+                return {
+                    "status": "success",
+                    "message": f"Launched app: {target}",
+                }
+
+            except Exception as error:
+                last_error = error
 
         return {
-            "status": "success",
-            "message": f"Launched app: {target}",
+            "status": "error",
+            "message": f"Failed to launch {target}: {last_error}",
         }
 
     def _search_google(self, intent: dict) -> dict:
