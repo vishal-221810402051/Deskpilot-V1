@@ -4,3 +4,5 @@ keyboard
 rapidfuzz
 pyautogui
 faster-whisper
+pywin32
+pygetwindow
