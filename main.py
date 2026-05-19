@@ -88,7 +88,7 @@ class DeskPilotApp:
 
 
 def main():
-    print("DeskPilot V1 - Phase 7 Command Logging")
+    print("DeskPilot V1 - Phase 8 Confirmation Layer")
     print("Loading assistant...")
 
     app = DeskPilotApp()

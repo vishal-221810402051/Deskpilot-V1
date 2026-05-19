@@ -20,10 +20,29 @@ class SafeExecutor:
             "calculator": "calc.exe",
         }
 
+        self.confirmation_required = {
+            "delete_file",
+            "move_file",
+            "rename_file",
+            "send_email",
+            "run_terminal",
+            "shutdown",
+            "restart",
+        }
+
     def execute(self, intent: dict) -> dict:
         action = intent.get("action")
 
         try:
+            if action in self.confirmation_required:
+                approved = self._request_confirmation(intent)
+
+                if not approved:
+                    return {
+                        "status": "cancelled",
+                        "message": "User cancelled the action",
+                    }
+
             if action == "open_folder":
                 return self._open_folder(intent)
 
@@ -46,6 +65,21 @@ class SafeExecutor:
                 "status": "error",
                 "message": str(e),
             }
+
+    def _request_confirmation(self, intent: dict) -> bool:
+        action = intent.get("action")
+        target = intent.get("target")
+
+        print("\n" + "-" * 70)
+        print("Confirmation Required")
+        print(f"Action : {action}")
+        print(f"Target : {target}")
+
+        response = input("Confirm action? (y/n): ").strip().lower()
+
+        print("-" * 70)
+
+        return response == "y"
 
     def _open_folder(self, intent: dict) -> dict:
         target = intent.get("target", "").strip().lower()
