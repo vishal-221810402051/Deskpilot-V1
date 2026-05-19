@@ -3,6 +3,7 @@ import webbrowser
 from urllib.parse import quote
 
 from core.file_search import FileSearchEngine
+from core.powerpoint_controller import PowerPointController
 
 
 class SafeExecutor:
@@ -12,6 +13,7 @@ class SafeExecutor:
 
     def __init__(self):
         self.file_search = FileSearchEngine()
+        self.powerpoint = PowerPointController()
 
         self.allowed_apps = {
             "chrome": [
@@ -102,6 +104,28 @@ class SafeExecutor:
 
             if action == "search_google":
                 return self._search_google(intent)
+
+            if action == "ppt_next_slide":
+                return self.powerpoint.next_slide()
+
+            if action == "ppt_previous_slide":
+                return self.powerpoint.previous_slide()
+
+            if action == "ppt_go_to_slide":
+                slide_number = int(intent.get("target"))
+                return self.powerpoint.go_to_slide(slide_number)
+
+            if action == "ppt_first_slide":
+                return self.powerpoint.go_to_first_slide()
+
+            if action == "ppt_last_slide":
+                return self.powerpoint.go_to_last_slide()
+
+            if action == "ppt_start_slideshow":
+                return self.powerpoint.start_slideshow()
+
+            if action == "ppt_end_slideshow":
+                return self.powerpoint.end_slideshow()
 
             return {
                 "status": "error",

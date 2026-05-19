@@ -39,6 +39,9 @@ class CommandParser:
         if self._is_search_google_command(clean_text):
             return asdict(self._parse_search_google(clean_text, text))
 
+        if self._is_powerpoint_control_command(clean_text):
+            return asdict(self._parse_powerpoint_control(clean_text, text))
+
         return asdict(CommandIntent(
             action="unknown",
             raw_text=text,
@@ -57,6 +60,13 @@ class CommandParser:
             "open hard look": "open outlook",
             "open out look": "open outlook",
             "open world": "open word",
+            "slatial": "slide show",
+            "slatiel": "slide show",
+            "slade show": "slide show",
+            "slatual": "slide show",
+            "slide sho": "slide show",
+            "slide showw": "slide show",
+            "slideshow": "slide show",
             "the ": "",
         }
 
@@ -104,6 +114,35 @@ class CommandParser:
 
     def _is_search_google_command(self, text: str) -> bool:
         return text.startswith("search google for") or text.startswith("google search for")
+
+    def _is_powerpoint_control_command(self, text: str) -> bool:
+        keywords = [
+            "present",
+            "stop present",
+            "close slide show",
+            "close slate show",
+            "end slide show",
+            "and slide show",
+            "slide show",
+            "slate show",
+            "slag shell",
+            "slide ",
+            "next slide",
+            "previous slide",
+            "back slide",
+            "go to slide",
+            "go slide",
+            "first slide",
+            "last slide",
+            "start slideshow",
+            "start slide show",
+            "end slideshow",
+            "end slide show",
+            "stop slideshow",
+            "stop slide show",
+        ]
+
+        return any(keyword in text for keyword in keywords)
 
     def _parse_open_folder(self, clean_text: str, raw_text: str) -> CommandIntent:
         target = clean_text
@@ -199,3 +238,133 @@ class CommandParser:
             raw_text=raw_text,
             confidence=0.85
         )
+
+    def _parse_powerpoint_control(self, clean_text: str, raw_text: str) -> CommandIntent:
+        if clean_text in ["present", "start presentation", "start present"]:
+            return CommandIntent(
+                action="ppt_start_slideshow",
+                raw_text=raw_text,
+                confidence=0.9,
+            )
+
+        if clean_text in [
+            "stop present",
+            "stop presentation",
+            "close slide show",
+            "close slate show",
+            "end slide show",
+            "and slide show",
+        ]:
+            return CommandIntent(
+                action="ppt_end_slideshow",
+                raw_text=raw_text,
+                confidence=0.9,
+            )
+
+        if clean_text.startswith("slide "):
+            slide_number = self._extract_number(clean_text)
+
+            if slide_number is not None:
+                return CommandIntent(
+                    action="ppt_go_to_slide",
+                    target=str(slide_number),
+                    raw_text=raw_text,
+                    confidence=0.9,
+                )
+
+        if "next slide" in clean_text:
+            return CommandIntent(
+                action="ppt_next_slide",
+                raw_text=raw_text,
+                confidence=0.9,
+            )
+
+        if "previous slide" in clean_text or "back slide" in clean_text:
+            return CommandIntent(
+                action="ppt_previous_slide",
+                raw_text=raw_text,
+                confidence=0.9,
+            )
+
+        if "first slide" in clean_text:
+            return CommandIntent(
+                action="ppt_first_slide",
+                raw_text=raw_text,
+                confidence=0.9,
+            )
+
+        if "last slide" in clean_text:
+            return CommandIntent(
+                action="ppt_last_slide",
+                raw_text=raw_text,
+                confidence=0.9,
+            )
+
+        if "start slide show" in clean_text:
+            return CommandIntent(
+                action="ppt_start_slideshow",
+                raw_text=raw_text,
+                confidence=0.9,
+            )
+
+        if (
+            "end slideshow" in clean_text
+            or "end slide show" in clean_text
+            or "stop slideshow" in clean_text
+            or "stop slide show" in clean_text
+        ):
+            return CommandIntent(
+                action="ppt_end_slideshow",
+                raw_text=raw_text,
+                confidence=0.9,
+            )
+
+        if "go to slide" in clean_text or "go slide" in clean_text:
+            slide_number = self._extract_number(clean_text)
+
+            if slide_number is not None:
+                return CommandIntent(
+                    action="ppt_go_to_slide",
+                    target=str(slide_number),
+                    raw_text=raw_text,
+                    confidence=0.9,
+                )
+
+        return CommandIntent(
+            action="unknown",
+            raw_text=raw_text,
+            confidence=0.0,
+        )
+
+    def _extract_number(self, text: str) -> int | None:
+        number_words = {
+            "one": 1,
+            "first": 1,
+            "two": 2,
+            "second": 2,
+            "three": 3,
+            "third": 3,
+            "four": 4,
+            "fourth": 4,
+            "five": 5,
+            "fifth": 5,
+            "six": 6,
+            "sixth": 6,
+            "seven": 7,
+            "seventh": 7,
+            "eight": 8,
+            "eighth": 8,
+            "nine": 9,
+            "ninth": 9,
+            "ten": 10,
+            "tenth": 10,
+        }
+
+        for token in text.split():
+            if token.isdigit():
+                return int(token)
+
+            if token in number_words:
+                return number_words[token]
+
+        return None
