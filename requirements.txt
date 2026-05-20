@@ -7,3 +7,6 @@ faster-whisper
 pywin32
 pygetwindow
 psutil
+fastapi
+uvicorn
+requests

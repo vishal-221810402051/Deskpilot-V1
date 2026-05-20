@@ -12,6 +12,7 @@ from core.transcriber import SpeechTranscriber
 from core.parser import CommandParser
 from core.executor import SafeExecutor
 from core.gesture_router import GestureRouter
+from core.gesture_server import GestureServer
 from core.logger import CommandLogger
 from core.semantic_corrector import SemanticCorrector
 
@@ -212,9 +213,14 @@ def main():
 
     app = DeskPilotApp()
 
+    gesture_server = GestureServer(app_controller=app)
+    gesture_server.start_background()
+
     print("[SYSTEM] Assistant ready.")
     print(f"[SYSTEM] Hotkey : {config.HOTKEY.upper()}")
     print(f"[SYSTEM] Record Duration : {config.RECORD_DURATION}s")
+    print("[GESTURE SERVER] HTTP receiver running on port 8765")
+    print("[GESTURE SERVER] POST /gesture with {'gesture':'swipe_right_to_left'}")
     print("[GESTURE] ALT+RIGHT : swipe right-to-left / next slide")
     print("[GESTURE] ALT+LEFT  : swipe left-to-right / previous slide")
     print("[GESTURE] ALT+UP    : swipe up / present")
