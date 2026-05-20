@@ -16,6 +16,7 @@ class CommandLogger:
         self,
         command_number: int,
         raw_text: str,
+        corrected_text: str,
         intent: dict,
         result: dict,
     ) -> None:
@@ -23,9 +24,12 @@ class CommandLogger:
             "timestamp": datetime.now().isoformat(timespec="seconds"),
             "command_number": command_number,
             "raw_text": raw_text,
+            "corrected_text": corrected_text,
             "intent": intent,
             "result": result,
         }
 
         with self.log_file.open("a", encoding="utf-8") as file:
-            file.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            file.write(
+                json.dumps(entry, ensure_ascii=False) + "\n"
+            )

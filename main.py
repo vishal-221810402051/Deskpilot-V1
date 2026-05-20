@@ -81,6 +81,7 @@ class DeskPilotApp:
             self.logger.log_command(
                 command_number=self.command_count,
                 raw_text=raw_text,
+                corrected_text=corrected_text,
                 intent=intent,
                 result=result,
             )
@@ -109,6 +110,7 @@ class DeskPilotApp:
             self.logger.log_command(
                 command_number=self.command_count,
                 raw_text=raw_text,
+                corrected_text=corrected_text,
                 intent=intent,
                 result=result,
             )
