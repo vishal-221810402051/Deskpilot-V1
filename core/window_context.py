@@ -237,6 +237,7 @@ class WindowContext:
             "powershell.exe": "powershell",
             "windowsterminal.exe": "terminal",
             "applicationframehost.exe": "windows_app",
+            "chatgpt.exe": "chatgpt",
         }
 
         return app_map.get(name, name.replace(".exe", ""))

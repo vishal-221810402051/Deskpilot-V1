@@ -12,6 +12,7 @@ from core.transcriber import SpeechTranscriber
 from core.parser import CommandParser
 from core.executor import SafeExecutor
 from core.logger import CommandLogger
+from core.semantic_corrector import SemanticCorrector
 
 
 class DeskPilotApp:
@@ -23,6 +24,7 @@ class DeskPilotApp:
         self.parser = CommandParser()
         self.executor = SafeExecutor()
         self.logger = CommandLogger()
+        self.corrector = SemanticCorrector()
 
         self.command_count = 0
         self.is_processing = False
@@ -42,6 +44,7 @@ class DeskPilotApp:
         self.command_count += 1
 
         raw_text = ""
+        corrected_text = ""
         intent = {}
         result = {}
 
@@ -66,7 +69,8 @@ class DeskPilotApp:
 
             print(f"{self._timestamp()}Parsing command...")
 
-            intent = self.parser.parse(raw_text)
+            corrected_text = self.corrector.correct(raw_text)
+            intent = self.parser.parse(corrected_text)
 
             print(f"{self._timestamp()}Executing command...")
 
@@ -83,11 +87,12 @@ class DeskPilotApp:
 
             print("-" * 72)
 
-            print(f"Voice Text : {raw_text}")
-            print(f"Intent     : {intent}")
-            print(f"Result     : {result}")
-            print(f"Duration   : {elapsed}s")
-            print("Log        : saved")
+            print(f"Voice Text     : {raw_text}")
+            print(f"Corrected Text : {corrected_text}")
+            print(f"Intent         : {intent}")
+            print(f"Result         : {result}")
+            print(f"Duration       : {elapsed}s")
+            print("Log            : saved")
 
             print("-" * 72)
 
