@@ -48,6 +48,128 @@ class WindowContext:
             "windows": self.list_windows(),
         }
 
+    def find_window_by_app(self, app_name: str) -> dict | None:
+        app_name = app_name.lower().strip()
+
+        windows = self.list_windows()
+
+        candidates = [
+            window for window in windows
+            if window.get("app_name") == app_name
+        ]
+
+        if not candidates:
+            return None
+
+        # Prefer non-minimized windows first
+        for window in candidates:
+            if window.get("state") != "minimized":
+                return window
+
+        return candidates[0]
+
+    def bring_window_front(self, app_name: str) -> dict:
+        window = self.find_window_by_app(app_name)
+
+        if not window:
+            return {
+                "status": "error",
+                "message": f"No window found for app: {app_name}",
+            }
+
+        hwnd = window["hwnd"]
+
+        try:
+            if window["state"] == "minimized":
+                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+
+            win32gui.SetForegroundWindow(hwnd)
+
+            return {
+                "status": "success",
+                "message": f"Brought {app_name} to front",
+                "window": window,
+            }
+
+        except Exception as error:
+            return {
+                "status": "error",
+                "message": str(error),
+            }
+
+    def maximize_window(self, app_name: str) -> dict:
+        window = self.find_window_by_app(app_name)
+
+        if not window:
+            return {
+                "status": "error",
+                "message": f"No window found for app: {app_name}",
+            }
+
+        try:
+            win32gui.ShowWindow(window["hwnd"], win32con.SW_MAXIMIZE)
+
+            return {
+                "status": "success",
+                "message": f"Maximized {app_name}",
+                "window": window,
+            }
+
+        except Exception as error:
+            return {
+                "status": "error",
+                "message": str(error),
+            }
+
+    def minimize_window(self, app_name: str) -> dict:
+        window = self.find_window_by_app(app_name)
+
+        if not window:
+            return {
+                "status": "error",
+                "message": f"No window found for app: {app_name}",
+            }
+
+        try:
+            win32gui.ShowWindow(window["hwnd"], win32con.SW_MINIMIZE)
+
+            return {
+                "status": "success",
+                "message": f"Minimized {app_name}",
+                "window": window,
+            }
+
+        except Exception as error:
+            return {
+                "status": "error",
+                "message": str(error),
+            }
+
+    def restore_window(self, app_name: str) -> dict:
+        window = self.find_window_by_app(app_name)
+
+        if not window:
+            return {
+                "status": "error",
+                "message": f"No window found for app: {app_name}",
+            }
+
+        try:
+            win32gui.ShowWindow(window["hwnd"], win32con.SW_RESTORE)
+            win32gui.SetForegroundWindow(window["hwnd"])
+
+            return {
+                "status": "success",
+                "message": f"Restored {app_name}",
+                "window": window,
+            }
+
+        except Exception as error:
+            return {
+                "status": "error",
+                "message": str(error),
+            }
+
     def _build_window_info(self, hwnd: int, is_foreground: bool = False) -> dict:
         try:
             if not hwnd:

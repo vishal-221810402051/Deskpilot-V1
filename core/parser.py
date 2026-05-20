@@ -27,6 +27,9 @@ class CommandParser:
                 confidence=0.0
             ))
 
+        if self._is_window_action_command(clean_text):
+            return asdict(self._parse_window_action(clean_text, text))
+
         if self._is_open_app_command(clean_text):
             return asdict(self._parse_open_app(clean_text, text))
 
@@ -143,6 +146,33 @@ class CommandParser:
         ]
 
         return any(keyword in text for keyword in keywords)
+
+    def _is_window_action_command(self, text: str) -> bool:
+        starters = [
+            "bring ",
+            "switch to ",
+            "open window ",
+            "focus ",
+            "maximize ",
+            "minimize ",
+            "restore ",
+        ]
+
+        return any(text.startswith(starter) for starter in starters)
+
+    def _normalize_app_alias(self, text: str) -> str:
+        aliases = {
+            "power point": "powerpoint",
+            "microsoft powerpoint": "powerpoint",
+            "google chrome": "chrome",
+            "visual studio code": "vscode",
+            "vs code": "vscode",
+            "file explorer": "file_explorer",
+            "explorer": "file_explorer",
+            "windows explorer": "file_explorer",
+        }
+
+        return aliases.get(text.strip().lower(), text.strip().lower())
 
     def _parse_open_folder(self, clean_text: str, raw_text: str) -> CommandIntent:
         target = clean_text
@@ -328,6 +358,37 @@ class CommandParser:
                     target=str(slide_number),
                     raw_text=raw_text,
                     confidence=0.9,
+                )
+
+        return CommandIntent(
+            action="unknown",
+            raw_text=raw_text,
+            confidence=0.0,
+        )
+
+    def _parse_window_action(self, clean_text: str, raw_text: str) -> CommandIntent:
+        action_map = {
+            "bring ": "window_bring_front",
+            "switch to ": "window_bring_front",
+            "open window ": "window_bring_front",
+            "focus ": "window_bring_front",
+            "maximize ": "window_maximize",
+            "minimize ": "window_minimize",
+            "restore ": "window_restore",
+        }
+
+        for phrase, action in action_map.items():
+            if clean_text.startswith(phrase):
+                target = clean_text.replace(phrase, "", 1).strip()
+                target = target.replace("to front", "").strip()
+                target = target.replace("front", "").strip()
+                target = self._normalize_app_alias(target)
+
+                return CommandIntent(
+                    action=action,
+                    target=target,
+                    raw_text=raw_text,
+                    confidence=0.85,
                 )
 
         return CommandIntent(

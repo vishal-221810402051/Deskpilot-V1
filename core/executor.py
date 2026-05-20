@@ -4,6 +4,7 @@ from urllib.parse import quote
 
 from core.file_search import FileSearchEngine
 from core.powerpoint_controller import PowerPointController
+from core.window_context import WindowContext
 
 
 class SafeExecutor:
@@ -14,6 +15,7 @@ class SafeExecutor:
     def __init__(self):
         self.file_search = FileSearchEngine()
         self.powerpoint = PowerPointController()
+        self.window_context = WindowContext()
 
         self.allowed_apps = {
             "chrome": [
@@ -126,6 +128,18 @@ class SafeExecutor:
 
             if action == "ppt_end_slideshow":
                 return self.powerpoint.end_slideshow()
+
+            if action == "window_bring_front":
+                return self.window_context.bring_window_front(intent.get("target"))
+
+            if action == "window_maximize":
+                return self.window_context.maximize_window(intent.get("target"))
+
+            if action == "window_minimize":
+                return self.window_context.minimize_window(intent.get("target"))
+
+            if action == "window_restore":
+                return self.window_context.restore_window(intent.get("target"))
 
             return {
                 "status": "error",
