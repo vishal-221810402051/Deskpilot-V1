@@ -141,6 +141,12 @@ class SafeExecutor:
             if action == "window_restore":
                 return self.window_context.restore_window(intent.get("target"))
 
+            if action == "window_maximize_active":
+                return self.window_context.maximize_active_window()
+
+            if action == "window_minimize_active":
+                return self.window_context.minimize_active_window()
+
             return {
                 "status": "error",
                 "message": f"Unsupported action: {action}",

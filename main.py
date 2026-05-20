@@ -11,6 +11,7 @@ from core.listener import record_audio
 from core.transcriber import SpeechTranscriber
 from core.parser import CommandParser
 from core.executor import SafeExecutor
+from core.gesture_router import GestureRouter
 from core.logger import CommandLogger
 from core.semantic_corrector import SemanticCorrector
 
@@ -25,6 +26,7 @@ class DeskPilotApp:
         self.executor = SafeExecutor()
         self.logger = CommandLogger()
         self.corrector = SemanticCorrector()
+        self.gesture_router = GestureRouter()
 
         self.command_count = 0
         self.is_processing = False
@@ -126,6 +128,73 @@ class DeskPilotApp:
         finally:
             self.is_processing = False
 
+    def handle_gesture(self, gesture: str):
+        if self.is_processing:
+            print(f"{self._timestamp()}DeskPilot is busy.")
+            return
+
+        self.is_processing = True
+        self.command_count += 1
+
+        result = {}
+        intent = {}
+
+        start_time = time.time()
+
+        try:
+            print("\n" + "=" * 72)
+            print(f"{self._timestamp()}Gesture Command #{self.command_count}")
+            print(f"{self._timestamp()}Gesture detected: {gesture}")
+
+            intent = self.gesture_router.gesture_to_intent(gesture)
+
+            print(f"{self._timestamp()}Executing gesture action...")
+            result = self.executor.execute(intent)
+
+            elapsed = round(time.time() - start_time, 2)
+
+            self.logger.log_command(
+                command_number=self.command_count,
+                raw_text=f"GESTURE:{gesture}",
+                corrected_text=f"GESTURE:{gesture}",
+                intent=intent,
+                result=result,
+            )
+
+            print("-" * 72)
+            print(f"Gesture       : {gesture}")
+            print(f"Intent        : {intent}")
+            print(f"Result        : {result}")
+            print(f"Duration      : {elapsed}s")
+            print("Log           : saved")
+            print("-" * 72)
+            print(f"{self._timestamp()}Ready for next command.")
+
+        except Exception as error:
+            elapsed = round(time.time() - start_time, 2)
+
+            result = {
+                "status": "error",
+                "message": str(error),
+            }
+
+            self.logger.log_command(
+                command_number=self.command_count,
+                raw_text=f"GESTURE:{gesture}",
+                corrected_text=f"GESTURE:{gesture}",
+                intent=intent,
+                result=result,
+            )
+
+            print("-" * 72)
+            print(f"DeskPilot gesture error: {error}")
+            print(f"Duration              : {elapsed}s")
+            print("Log                   : saved")
+            print("-" * 72)
+
+        finally:
+            self.is_processing = False
+
 
 def print_banner():
     print("=" * 72)
@@ -146,6 +215,13 @@ def main():
     print("[SYSTEM] Assistant ready.")
     print(f"[SYSTEM] Hotkey : {config.HOTKEY.upper()}")
     print(f"[SYSTEM] Record Duration : {config.RECORD_DURATION}s")
+    print("[GESTURE] ALT+RIGHT : swipe right-to-left / next slide")
+    print("[GESTURE] ALT+LEFT  : swipe left-to-right / previous slide")
+    print("[GESTURE] ALT+UP    : swipe up / present")
+    print("[GESTURE] ALT+DOWN  : swipe down / stop present")
+    print("[GESTURE] ALT+X     : twist clockwise / maximize active")
+    print("[GESTURE] ALT+M     : twist anticlockwise / minimize active")
+    print("[GESTURE] ALT+P     : double tap / bring PowerPoint front")
     print("[SYSTEM] Press ESC to exit.")
 
     keyboard.add_hotkey(
@@ -154,6 +230,69 @@ def main():
             target=app.handle_command,
             daemon=True,
         ).start()
+    )
+
+    keyboard.add_hotkey(
+        "alt+right",
+        lambda: threading.Thread(
+            target=app.handle_gesture,
+            args=("swipe_right_to_left",),
+            daemon=True,
+        ).start(),
+    )
+
+    keyboard.add_hotkey(
+        "alt+left",
+        lambda: threading.Thread(
+            target=app.handle_gesture,
+            args=("swipe_left_to_right",),
+            daemon=True,
+        ).start(),
+    )
+
+    keyboard.add_hotkey(
+        "alt+up",
+        lambda: threading.Thread(
+            target=app.handle_gesture,
+            args=("swipe_up",),
+            daemon=True,
+        ).start(),
+    )
+
+    keyboard.add_hotkey(
+        "alt+down",
+        lambda: threading.Thread(
+            target=app.handle_gesture,
+            args=("swipe_down",),
+            daemon=True,
+        ).start(),
+    )
+
+    keyboard.add_hotkey(
+        "alt+x",
+        lambda: threading.Thread(
+            target=app.handle_gesture,
+            args=("twist_clockwise",),
+            daemon=True,
+        ).start(),
+    )
+
+    keyboard.add_hotkey(
+        "alt+m",
+        lambda: threading.Thread(
+            target=app.handle_gesture,
+            args=("twist_anticlockwise",),
+            daemon=True,
+        ).start(),
+    )
+
+    keyboard.add_hotkey(
+        "alt+p",
+        lambda: threading.Thread(
+            target=app.handle_gesture,
+            args=("double_tap",),
+            daemon=True,
+        ).start(),
     )
 
     keyboard.wait("esc")

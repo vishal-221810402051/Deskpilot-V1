@@ -170,6 +170,48 @@ class WindowContext:
                 "message": str(error),
             }
 
+    def maximize_active_window(self) -> dict:
+        active = self.get_active_window_info()
+
+        if active.get("status") != "success":
+            return active
+
+        try:
+            win32gui.ShowWindow(active["hwnd"], win32con.SW_MAXIMIZE)
+
+            return {
+                "status": "success",
+                "message": f"Maximized active window: {active.get('app_name')}",
+                "window": active,
+            }
+
+        except Exception as error:
+            return {
+                "status": "error",
+                "message": str(error),
+            }
+
+    def minimize_active_window(self) -> dict:
+        active = self.get_active_window_info()
+
+        if active.get("status") != "success":
+            return active
+
+        try:
+            win32gui.ShowWindow(active["hwnd"], win32con.SW_MINIMIZE)
+
+            return {
+                "status": "success",
+                "message": f"Minimized active window: {active.get('app_name')}",
+                "window": active,
+            }
+
+        except Exception as error:
+            return {
+                "status": "error",
+                "message": str(error),
+            }
+
     def _build_window_info(self, hwnd: int, is_foreground: bool = False) -> dict:
         try:
             if not hwnd:
